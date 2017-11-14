@@ -60,9 +60,15 @@ def get_char_info(page_url):
     return imgs_urls, rarity, attr
 
 def get_each_images(args, vals):
+    url_history = {}
     for v in vals:
         c = v['href']
         page_url = args.base_url + urllib.parse.quote(c)
+        if page_url in url_history.keys():
+            print("visited %s" %page_url)
+            continue
+        else:
+            url_history[page_url] = True
         img_urls, rarity, attr = get_char_info(page_url)
         print('rarity: %d, attr: %s' % (rarity, attr))
         target_dir = os.path.join(args.output_dir, attrval_dict[attr], str(rarity))
