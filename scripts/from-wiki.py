@@ -13,6 +13,7 @@ attr_dict = {
     }
 
 attrval_dict = {0: 'passion', 1: 'pure', 2: 'cool'}
+extimg_dict = {'プロフィール': 'prof', '最大LV': 'maxlevel'}
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -21,7 +22,8 @@ def get_args():
                         default='https://kemono-friends.gamerch.com')
     parser.add_argument('--start-url',
                         default='https://kemono-friends.gamerch.com/%E3%82%AD%E3%83%A3%E3%83%A9%E4%B8%80%E8%A6%A7')
-    parser.add_argument('--output-dir', '-o')
+    parser.add_argument('--output-dir', '-o', default='save')
+    parser.add_argument('--save-all', default=False, action='store_true')
     args = parser.parse_args()
     return args
 
@@ -65,8 +67,11 @@ def get_each_images(args, vals):
         print('rarity: %d, attr: %s' % (rarity, attr))
         target_dir = os.path.join(args.output_dir, attrval_dict[attr], str(rarity))
         os.makedirs(target_dir, exist_ok=True)
-        for img_url in img_urls:
+        for i, img_url in enumerate(img_urls):
             fname = os.path.basename(img_url)
+            if i > 0 and args.save_all is False:
+                print('save only first image, skip %s' % fname)
+                continue
             fname = os.path.join(target_dir, fname)
             if os.path.exists(fname):
                 print('skip %s' % fname)
