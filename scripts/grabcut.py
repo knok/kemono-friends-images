@@ -18,8 +18,11 @@ def get_files(target_path):
                 f = os.path.join(dirpath, fname)
                 files.append(f)
     #
+    return files
     # filter files
-    allow_regex = re.compile('cool/5/')
+
+def filtering_files(files, regex='cool/5/'):
+    allow_regex = re.compile(regex)
     filtered = []
     for f in files:
         if allow_regex.search(f):
