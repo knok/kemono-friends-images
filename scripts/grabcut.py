@@ -53,6 +53,7 @@ def do_grabcut(fname):
     cv2.grabCut(cimg, mask, None, bgModel, fgModel, 5, cv2.GC_INIT_WITH_MASK)
     out = cimg.copy()
     out[np.where((mask == 0) | (mask == 2))] = 255
+    x1, y1, x2, y2 = values['img_area']
     out = out[y1:y2, x1:x2, :]
     return out
 
