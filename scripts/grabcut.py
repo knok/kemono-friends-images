@@ -6,8 +6,10 @@ import numpy as np
 import cv2
 #import matplotlib.pyplot as plt
 
-values = {'rect': (210, 50, 230, 400),
-          'face_pos': (280, 120, 360, 200)}
+values = {'rect': (210, 50, 230, 460),
+          'face_pos': (280, 120, 360, 200),
+          'clip': (0.45, 0.76),
+          'img_area': (210, 50, 420, 460)}
 
 def get_files(target_path):
     files = []
@@ -32,8 +34,8 @@ def filtering_files(files, regex='cool/5/'):
 
 def img_clip(img):
     h, w, c = img.shape
-    x0 = int(w * 0.45)
-    y0 = int(h * 0.76)
+    x0 = int(w * values['clip'][0])
+    y0 = int(h * values['clip'][1])
     clip = img[0:y0, 0:x0, :]
     return clip
 
@@ -51,6 +53,7 @@ def do_grabcut(fname):
     cv2.grabCut(cimg, mask, None, bgModel, fgModel, 5, cv2.GC_INIT_WITH_MASK)
     out = cimg.copy()
     out[np.where((mask == 0) | (mask == 2))] = 255
+    out = out[y1:y2, x1:x2, :]
     return out
 
 def get_args():
