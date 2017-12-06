@@ -6,10 +6,11 @@ import numpy as np
 import cv2
 
 values = {'rect': (155, 20, 340, 450), # (495, 470)
-          'face_pos': (288, 120, 355, 200),
+          'face_pos': (288, 120, 350, 200),
           'clip': (0.45, 0.73),
           'opening_iter': 1,
           'iter': 4,
+          'min_cnt_area': 1,
           'img_area': (155, 20, 495, 450)}
 
 def get_args():
@@ -17,6 +18,7 @@ def get_args():
     p.add_argument('--input', '-i', default='fixed')
     p.add_argument('--output', '-o', default='mog2-gc')
     p.add_argument('--mark-face', default=False, action='store_true')
+    p.add_argument('--opening', default=True, action='store_false')
     p.add_argument('--bad-output', default='bad-mog2')
     args = p.parse_args()
     return args
@@ -60,6 +62,9 @@ def find_whole_rect(cts):
     min_x, min_y = 10000, 10000
     max_x, max_y = -1, -1
     for c in cts:
+        area = cv2.contourArea(c)
+        if area < values['min_cnt_area']:
+            continue
         x, y, w, h = cv2.boundingRect(c)
         xx = x + w
         yy = y + h
@@ -69,7 +74,7 @@ def find_whole_rect(cts):
         max_y = yy if max_y < yy else max_y
     return [min_x, min_y, max_x, max_y]
 
-def get_area_by_mog2(idx, imgs):
+def get_area_by_mog2(idx, imgs, args):
     fgbd = cv2.createBackgroundSubtractorMOG2()
     cimgs = imgs.copy()
     target_img = cimgs.pop(idx)
@@ -78,8 +83,11 @@ def get_area_by_mog2(idx, imgs):
     fgmask = fgbd.apply(target_img)
 
     kernel = np.ones((5, 5), np.uint8)
-    dmask = cv2.morphologyEx(fgmask, cv2.MORPH_OPEN, kernel, iterations=values['opening_iter'])
-    dmask = cv2.dilate(dmask, kernel, iterations=values['iter'])
+    if args.opening:
+        dmask = cv2.morphologyEx(fgmask, cv2.MORPH_OPEN, kernel, iterations=values['opening_iter'])
+        dmask = cv2.dilate(dmask, kernel, iterations=values['iter'])
+    else:
+        dmask = fgmask #cv2.dilate(fgmask, kernel, iterations=1)
     ret, thresh = cv2.threshold(dmask, 127, 255, 0)
     img ,cts, hier = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     area = find_whole_rect(cts)
@@ -124,7 +132,7 @@ def do_grabcut(args, files):
     imgs = read_images(files)
     for i, fname in enumerate(files):
         cimg = imgs[i]
-        area = get_area_by_mog2(i, imgs)
+        area = get_area_by_mog2(i, imgs, args)
         if area_eq_imgsize(area, cimg):
             print("area is whole image %s" % fname)
             x1, y1, x2, y2 = values['img_area']
