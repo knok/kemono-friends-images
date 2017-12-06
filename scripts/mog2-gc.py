@@ -38,6 +38,14 @@ def filtering_files(files, regex='cool/5/'):
 
     return filtered
 
+def get_filterd_files(files):
+    attr = 'cool passion pure'.split()
+    rarelity = '[12] 3 4 5'.split()
+    for a in attr:
+        for r in rarelity:
+            pat = '%s/%s/' % (a, r)
+            yield filtering_files(files, pat)
+
 def img_clip(img):
     h, w, c = img.shape
     x0 = int(w * values['clip'][0])
@@ -126,8 +134,9 @@ def do_grabcut(args, files):
 
 def main():
     args = get_args()
-    files = get_files(args.input)
-    do_grabcut(args, files)
+    all_files = get_files(args.input)
+    for files in get_filterd_files(all_files):
+        do_grabcut(args, files)
 
 
 if __name__ == '__main__':
