@@ -91,11 +91,26 @@ def get_output_path(args, fname):
     os.makedirs(out_dir, exist_ok=True)
     return out_fname
 
+def area_eq_imgsize(area, img):
+    h, w, _ = img.shape
+    return area[2] == w and area[3] == h
+
+def copy_image(args, fname, img):
+    out_fname = get_output_path(args, fname)
+    cv2.imwrite(out_fname, img)
+    return
+
 def do_grabcut(args, files):
     imgs = read_images(files)
     for i, fname in enumerate(files):
         cimg = imgs[i]
         area = get_area_by_mog2(i, imgs)
+        if area_eq_imgsize(area, cimg):
+            print("area is whole image %s" % fname)
+            x1, y1, x2, y2 = values['img_area']
+            out = cimg[y1:y2, x1:x2, :]
+            copy_image(args, fname, out)
+            continue
         mask = np.zeros(cimg.shape[:2], dtype=np.uint8)
         rect = (area[0], area[1], area[4], area[5])
         bgModel = np.zeros((1, 65), np.float64)
