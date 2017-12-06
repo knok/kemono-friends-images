@@ -6,10 +6,10 @@ import numpy as np
 import cv2
 #import matplotlib.pyplot as plt
 
-values = {'rect': (210, 50, 230, 460),
+values = {'rect': (155, 20, 340, 450), # (495, 470)
           'face_pos': (280, 120, 360, 200),
           'clip': (0.45, 0.76),
-          'img_area': (210, 50, 420, 460)}
+          'img_area': (155, 20, 495, 450)}
 
 def get_files(target_path):
     files = []
