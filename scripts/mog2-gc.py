@@ -49,7 +49,7 @@ def find_whole_rect(cts):
     min_x, min_y = 10000, 10000
     max_x, max_y = -1, -1
     for c in cts:
-        x, y, w, h = v2.boundingRect(c)
+        x, y, w, h = cv2.boundingRect(c)
         xx = x + w
         yy = y + h
         min_x = x if min_x > x else min_x
@@ -59,16 +59,15 @@ def find_whole_rect(cts):
     return [min_x, min_y, max_x, max_y]
 
 def get_area_by_mog2(idx, imgs):
-    fgbd = cv2.createBackgroundSubstractorMOG2()
+    fgbd = cv2.createBackgroundSubtractorMOG2()
     cimgs = imgs.copy()
     target_img = cimgs.pop(idx)
     for i in cimgs:
         fgmask = fgbd.apply(i)
     fgmask = fgbd.apply(target_img)
-    mask = np.where(fgmask > 0, 1, 0).astype(np.uint8)
 
     kernel = np.ones((5, 5), np.uint8)
-    dmask = cv2.dilate(mask, kernel, iterations=values['iter'])
+    dmask = cv2.dilate(fgmask, kernel, iterations=values['iter'])
     ret, thresh = cv2.threshold(dmask, 127, 255, 0)
     img ,cts, hier = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     area = find_whole_rect(cts)
@@ -95,6 +94,7 @@ def get_output_path(args, fname):
 def do_grabcut(args, files):
     imgs = read_images(files)
     for i, fname in enumerate(files):
+        cimg = imgs[i]
         area = get_area_by_mog2(i, imgs)
         mask = np.zeros(cimg.shape[:2], dtype=np.uint8)
         rect = (area[0], area[1], area[4], area[5])
