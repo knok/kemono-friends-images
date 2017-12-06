@@ -6,15 +6,18 @@ import numpy as np
 import cv2
 
 values = {'rect': (155, 20, 340, 450), # (495, 470)
-          'face_pos': (280, 120, 360, 200),
+          'face_pos': (288, 120, 355, 200),
           'clip': (0.45, 0.73),
-          'iter': 1,
+          'opening_iter': 1,
+          'iter': 4,
           'img_area': (155, 20, 495, 450)}
 
 def get_args():
     p = argparse.ArgumentParser()
     p.add_argument('--input', '-i', default='fixed')
     p.add_argument('--output', '-o', default='mog2-gc')
+    p.add_argument('--mark-face', default=False, action='store_true')
+    p.add_argument('--bad-output', default='bad-mog2')
     args = p.parse_args()
     return args
 
@@ -75,7 +78,8 @@ def get_area_by_mog2(idx, imgs):
     fgmask = fgbd.apply(target_img)
 
     kernel = np.ones((5, 5), np.uint8)
-    dmask = cv2.dilate(fgmask, kernel, iterations=values['iter'])
+    dmask = cv2.morphologyEx(fgmask, cv2.MORPH_OPEN, kernel, iterations=values['opening_iter'])
+    dmask = cv2.dilate(dmask, kernel, iterations=values['iter'])
     ret, thresh = cv2.threshold(dmask, 127, 255, 0)
     img ,cts, hier = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     area = find_whole_rect(cts)
@@ -99,12 +103,20 @@ def get_output_path(args, fname):
     os.makedirs(out_dir, exist_ok=True)
     return out_fname
 
+def get_bad_output_path(args, fname):
+    inpath_len = len(args.input)
+    bfname = fname[inpath_len+1:]
+    out_fname = os.path.join(args.bad_output, bfname)
+    out_dir = os.path.dirname(out_fname)
+    os.makedirs(out_dir, exist_ok=True)
+    return out_fname
+
 def area_eq_imgsize(area, img):
     h, w, _ = img.shape
     return area[2] == w and area[3] == h
 
 def copy_image(args, fname, img):
-    out_fname = get_output_path(args, fname)
+    out_fname = get_bad_output_path(args, fname)
     cv2.imwrite(out_fname, img)
     return
 
@@ -124,6 +136,10 @@ def do_grabcut(args, files):
         bgModel = np.zeros((1, 65), np.float64)
         fgModel = np.zeros((1, 65), np.float64)
         cv2.grabCut(cimg, mask, rect, bgModel, fgModel, 5, cv2.GC_INIT_WITH_RECT)
+        if args.mark_face:
+            x1, y1, x2, y2 = values['face_pos']
+            cv2.rectangle(mask, (x1, y1), (x2, y2), 1, -1)
+            cv2.grabCut(cimg, mask, None, bgModel, fgModel, 5, cv2.GC_INIT_WITH_MASK)
         out = cimg.copy()
         out[np.where((mask == 0) | (mask == 2))] = 255
         x1, y1, x2, y2 = values['img_area']
