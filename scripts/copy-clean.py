@@ -24,12 +24,12 @@ def gen_files(path):
 def v_clean(img, pos):
     v_sum = img[:, pos, :].sum()
     v_avg = int(v_sum / img.shape[0] / 3)
-    return v_avg == 255
+    return v_avg >= 200
 
 def h_clean(img, pos):
     h_sum = img[pos, :, :].sum()
     h_avg = int(h_sum / img.shape[1] / 3)
-    return h_avg == 255
+    return h_avg >= 200
 
 def is_clean(fname):
     img = cv2.imread(fname)
